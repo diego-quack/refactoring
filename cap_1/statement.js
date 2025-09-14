@@ -1,3 +1,11 @@
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+
+const invoices = require('./invoices.json');
+const plays = require('./plays.json');
+
+console.log(statement(invoices, plays));
+
 function statement(invoice, plays) {
   let totalAmount = 0;
   let volumeCredits = 0;
@@ -10,6 +18,23 @@ function statement(invoice, plays) {
 
   for (let perf of invoice[0].performances) {
     const play = plays[perf.playId];
+    let thisAmount = amountFor(perf, play)
+
+    volumeCredits += Math.max(perf.audience - 30, 0);
+    if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
+
+    result += ` ${play.name}: ${format(thisAmount / 100)} (${
+      perf.audience
+    } seats)\n`;
+    totalAmount += thisAmount;
+  }
+
+  result += `Amount owed is ${format(totalAmount / 100)}\n`;
+  result += `You earned ${volumeCredits} credits\n`;
+  return result;
+}
+
+function amountFor(perf, play){
     let thisAmount = 0;
 
     switch (play.type) {
@@ -27,24 +52,7 @@ function statement(invoice, plays) {
         throw new Error(`Unknown type: ${play.type}`);
     }
 
-    volumeCredits += Math.max(perf.audience - 30, 0);
-    if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
-
-    result += ` ${play.name}: ${format(thisAmount / 100)} (${
-      perf.audience
-    } seats)\n`;
-    totalAmount += thisAmount;
-  }
-
-  result += `Amount owed is ${format(totalAmount / 100)}\n`;
-  result += `You earned ${volumeCredits} credits\n`;
-  return result;
+    return thisAmount;
 }
 
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
 
-const invoices = require('./invoices.json');
-const plays = require('./plays.json');
-
-console.log(statement(invoices, plays));
